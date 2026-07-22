@@ -1,36 +1,42 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI Receptionist
 
-## Getting Started
+A multi-tenant AI receptionist that businesses embed on their site. It converses with visitors,
+answers from the business's own info, books appointments, and captures leads — with an owner
+dashboard for it all. Runs entirely on free infrastructure.
 
-First, run the development server:
+**Slice 1 (this build):** web-chat receptionist + booking + lead capture + owner dashboard,
+multi-tenant schema with a seeded demo business. Next: FAQ knowledge base (embeddings), then voice.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Stack
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Next.js 16 (App Router) · TypeScript · Tailwind v4 · Postgres + Drizzle ORM · Groq (free Llama,
+via the Vercel AI SDK, tool-calling) · Auth.js + GitHub · Resend · Vitest.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Architecture
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `lib/db/` — Drizzle schema (multi-tenant, scoped by `businessId`), client, queries, seed.
+- `lib/booking/` — pure slot math (`availability.ts`) + transactional booking with an advisory
+  lock and overlap guard (`booking.ts`). All date/timezone/conflict logic lives here, not the model.
+- `lib/knowledge/` — keyword search over the business's freeform text.
+- `lib/ai/` — a thin system prompt + strictly-validated tools (`searchKnowledge`, `checkAvailability`,
+  `bookAppointment`, `captureLead`). The app validates every tool call; the model only orchestrates.
+- `lib/notify/` — owner email alerts (Resend).
+- `app/api/chat/` — streaming route (Groq + tools), persists conversation turns.
+- `app/c/[businessId]/` — public chat widget. `app/dashboard/` — authed owner dashboard + settings.
 
-## Learn More
+## Setup
 
-To learn more about Next.js, take a look at the following resources:
+1. `cp .env.example .env.local` and fill in:
+   - `DATABASE_URL` — a Postgres connection string (Supabase or Neon, free tier).
+   - `GROQ_API_KEY` — from https://console.groq.com/keys (free).
+   - `AUTH_SECRET` — run `npx auth secret`.
+   - `AUTH_GITHUB_ID` / `AUTH_GITHUB_SECRET` — a GitHub OAuth app (callback: `/api/auth/callback/github`).
+   - `RESEND_API_KEY` — from https://resend.com (free).
+2. `npm run db:migrate` — apply the schema.
+3. `npm run db:seed` — create the "Bright Smile Dental" demo business.
+4. `npm run dev` — open http://localhost:3000 (`/demo` opens the demo receptionist; `/dashboard` is the owner view).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Testing
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+`npm test` — Vitest covers the slot/conflict logic, knowledge search, and the tool handlers
+(including the safety net that rejects a booking time that isn't an open slot).
