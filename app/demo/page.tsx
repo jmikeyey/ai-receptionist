@@ -8,9 +8,13 @@ export default async function DemoRedirect() {
   const [demo] = await db().select().from(businesses).limit(1);
   if (!demo) {
     return (
-      <main className="mx-auto max-w-2xl px-6 py-24">
-        <p className="text-neutral-600">
-          No demo business is seeded yet. Run <code className="rounded bg-neutral-200 px-1">npm run db:seed</code> first.
+      <main className="grid min-h-screen place-items-center px-6">
+        <p className="max-w-md text-center text-sm text-muted">
+          No demo business is seeded yet. Run{" "}
+          <code className="rounded bg-surface px-1.5 py-0.5 font-mono text-xs text-ink ring-1 ring-line-strong">
+            npm run db:seed
+          </code>{" "}
+          first.
         </p>
       </main>
     );

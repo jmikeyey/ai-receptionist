@@ -3,6 +3,16 @@ import { DateTime } from "luxon";
 import { createClient } from "@/lib/supabase/server";
 import { resolveDashboardBusiness } from "@/lib/dashboard-business";
 import { listUpcomingAppointments, listLeads, listConversations } from "@/lib/db/queries";
+import {
+  PageHeader,
+  SectionLabel,
+  StatCard,
+  Card,
+  Badge,
+  EmptyState,
+  Avatar,
+  ButtonLink,
+} from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +23,7 @@ export default async function Overview() {
   } = await supabase.auth.getUser();
   if (!user) return null; // layout renders the login form; page just no-ops when unauthenticated
   const business = await resolveDashboardBusiness(user.id);
-  if (!business) return <p className="text-neutral-600">No business found.</p>;
+  if (!business) return <p className="text-muted">No business found.</p>;
 
   const [appts, capturedLeads, convos] = await Promise.all([
     listUpcomingAppointments(business.id),
@@ -21,80 +31,129 @@ export default async function Overview() {
     listConversations(business.id),
   ]);
 
-  const when = (d: Date) => DateTime.fromJSDate(d).setZone(business.timezone).toFormat("ccc LLL d, h:mm a");
+  const when = (d: Date) => DateTime.fromJSDate(d).setZone(business.timezone).toFormat("ccc LLL d");
+  const time = (d: Date) => DateTime.fromJSDate(d).setZone(business.timezone).toFormat("h:mm a");
+  const newLeads = capturedLeads.filter((l) => l.status === "new").length;
 
   return (
-    <div className="space-y-10">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{business.name}</h1>
-        <p className="mt-1 text-sm text-neutral-500">
-          Public chat:{" "}
-          <Link href={`/c/${business.id}`} className="text-accent hover:underline">
-            /c/{business.id}
-          </Link>
-        </p>
+    <div className="space-y-8">
+      <PageHeader
+        title={business.name}
+        subtitle={
+          <span className="inline-flex items-center gap-1.5">
+            Public chat
+            <Link
+              href={`/c/${business.id}`}
+              className="font-mono text-[13px] text-accent hover:underline"
+            >
+              /c/{business.id.slice(0, 8)}…
+            </Link>
+          </span>
+        }
+        actions={
+          <ButtonLink href={`/c/${business.id}`} variant="secondary" size="sm">
+            Open chat ↗
+          </ButtonLink>
+        }
+      />
+
+      {/* Summary before detail. */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <StatCard label="Upcoming appointments" value={appts.length} hint="Next 50 shown" />
+        <StatCard
+          label="Leads"
+          value={capturedLeads.length}
+          hint={newLeads > 0 ? `${newLeads} new to follow up` : "All followed up"}
+        />
+        <StatCard label="Conversations" value={convos.length} hint="Recent visitor chats" />
       </div>
 
-      <section>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-neutral-500">
-          Upcoming appointments
-        </h2>
+      {/* Appointments */}
+      <section className="space-y-3">
+        <SectionLabel>Upcoming appointments</SectionLabel>
         {appts.length === 0 ? (
-          <p className="text-sm text-neutral-500">No upcoming appointments.</p>
+          <EmptyState>No upcoming appointments yet.</EmptyState>
         ) : (
-          <ul className="divide-y divide-neutral-200 rounded-lg border border-neutral-200 bg-white">
+          <Card className="divide-y divide-line overflow-hidden">
             {appts.map((a) => (
-              <li key={a.id} className="flex items-center justify-between px-4 py-3 text-sm">
-                <span>
-                  <span className="font-medium">{a.contactName}</span> · {a.serviceName}
-                  <span className="ml-2 text-neutral-500">{a.contactEmail ?? a.contactPhone}</span>
-                </span>
-                <span className="text-neutral-600">{when(a.startsAt)}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <section>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-neutral-500">Leads</h2>
-        {capturedLeads.length === 0 ? (
-          <p className="text-sm text-neutral-500">No leads yet.</p>
-        ) : (
-          <ul className="divide-y divide-neutral-200 rounded-lg border border-neutral-200 bg-white">
-            {capturedLeads.map((l) => (
-              <li key={l.id} className="px-4 py-3 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">{l.contactName}</span>
-                  <span className="text-neutral-500">{l.contactEmail ?? l.contactPhone}</span>
+              <div key={a.id} className="flex items-center gap-3 px-4 py-3">
+                <Avatar name={a.contactName ?? "?"} />
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-medium text-ink">
+                    {a.contactName}
+                    <span className="ml-2 font-normal text-muted">{a.serviceName}</span>
+                  </div>
+                  <div className="truncate font-mono text-xs text-faint">
+                    {a.contactEmail ?? a.contactPhone}
+                  </div>
                 </div>
-                <p className="mt-1 text-neutral-600">{l.reason}</p>
-              </li>
+                <div className="shrink-0 text-right">
+                  <div className="font-mono text-sm tabular-nums text-ink">{when(a.startsAt)}</div>
+                  <div className="font-mono text-xs tabular-nums text-muted">{time(a.startsAt)}</div>
+                </div>
+              </div>
             ))}
-          </ul>
+          </Card>
         )}
       </section>
 
-      <section>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-neutral-500">
-          Recent conversations
-        </h2>
-        {convos.length === 0 ? (
-          <p className="text-sm text-neutral-500">No conversations yet.</p>
+      {/* Leads */}
+      <section className="space-y-3">
+        <SectionLabel>Leads</SectionLabel>
+        {capturedLeads.length === 0 ? (
+          <EmptyState>No leads captured yet.</EmptyState>
         ) : (
-          <ul className="divide-y divide-neutral-200 rounded-lg border border-neutral-200 bg-white">
-            {convos.map((c) => (
-              <li key={c.id}>
-                <Link
-                  href={`/dashboard/conversations/${c.id}`}
-                  className="flex items-center justify-between px-4 py-3 text-sm hover:bg-neutral-50"
-                >
-                  <span className="text-neutral-700">Conversation</span>
-                  <span className="text-neutral-500">{when(c.startedAt)}</span>
-                </Link>
-              </li>
+          <Card className="divide-y divide-line overflow-hidden">
+            {capturedLeads.map((l) => (
+              <div key={l.id} className="px-4 py-3">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm font-medium text-ink">{l.contactName}</span>
+                  <div className="flex items-center gap-2">
+                    {l.status === "new" && <Badge tone="warn">New</Badge>}
+                    <span className="font-mono text-xs text-faint">
+                      {l.contactEmail ?? l.contactPhone}
+                    </span>
+                  </div>
+                </div>
+                <p className="mt-1 text-sm text-muted">{l.reason}</p>
+              </div>
             ))}
-          </ul>
+          </Card>
+        )}
+      </section>
+
+      {/* Conversations */}
+      <section className="space-y-3">
+        <SectionLabel>Recent conversations</SectionLabel>
+        {convos.length === 0 ? (
+          <EmptyState>No conversations yet.</EmptyState>
+        ) : (
+          <Card className="divide-y divide-line overflow-hidden">
+            {convos.map((c) => (
+              <Link
+                key={c.id}
+                href={`/dashboard/conversations/${c.id}`}
+                className="flex items-center justify-between px-4 py-3 transition-colors hover:bg-paper"
+              >
+                <span className="flex items-center gap-2.5 text-sm text-ink">
+                  <span className="grid h-8 w-8 place-items-center rounded-full bg-paper text-muted">
+                    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden>
+                      <path
+                        d="M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v9a1.5 1.5 0 0 1-1.5 1.5H9l-4 3.5V16H5.5A1.5 1.5 0 0 1 4 14.5v-9Z"
+                        stroke="currentColor"
+                        strokeWidth="1.6"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </span>
+                  View transcript
+                </span>
+                <span className="font-mono text-xs tabular-nums text-muted">
+                  {when(c.startedAt)} · {time(c.startedAt)}
+                </span>
+              </Link>
+            ))}
+          </Card>
         )}
       </section>
     </div>

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { inputClass, Button } from "@/components/ui";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -32,32 +33,32 @@ export default function LoginForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="mt-6 space-y-3 text-left">
+    <form onSubmit={onSubmit} className="mt-5 space-y-3">
       <input
         name="email"
         type="email"
         placeholder="Email"
+        aria-label="Email"
         required
         defaultValue="demo@brightsmile.test"
-        className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-accent"
+        className={inputClass}
       />
       <input
         name="password"
         type="password"
         placeholder="Password"
+        aria-label="Password"
         required
         defaultValue="demo1234"
-        className="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-accent"
+        className={inputClass}
       />
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      <button
-        type="submit"
-        disabled={pending}
-        className="w-full rounded-lg bg-neutral-900 px-5 py-2.5 text-sm font-medium text-white disabled:opacity-50"
-      >
+      {error && <p className="text-sm text-warn">{error}</p>}
+      <Button type="submit" disabled={pending} className="w-full">
         {pending ? "Signing in…" : "Sign in"}
-      </button>
-      <p className="text-center text-xs text-neutral-400">Demo login is pre-filled — just click Sign in.</p>
+      </Button>
+      <p className="text-center text-xs text-faint">
+        Demo login is pre-filled — just click Sign in.
+      </p>
     </form>
   );
 }
