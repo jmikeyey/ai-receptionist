@@ -1,3 +1,4 @@
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { resolveDashboardBusiness } from "@/lib/dashboard-business";
 import { listServices, listAvailability, listKnowledgeDocuments } from "@/lib/db/queries";
@@ -10,6 +11,7 @@ import {
   EmptyState,
   inputClass,
 } from "@/components/ui";
+import { CopySnippet } from "@/components/CopySnippet";
 import {
   updateProfile,
   addService,
@@ -47,9 +49,30 @@ export default async function SettingsPage() {
   ]);
   const ruleByDay = new Map(rules.map((r) => [r.weekday, r]));
 
+  const h = await headers();
+  const origin = `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host")}`;
+  const snippet = `<script src="${origin}/embed.js" data-business-id="${business.id}" defer></script>`;
+
   return (
     <div className="space-y-8">
       <PageHeader title="Settings" subtitle="Configure what your receptionist knows and can do." />
+
+      {/* Install */}
+      <section className="space-y-3">
+        <SectionLabel>Install on your website</SectionLabel>
+        <Card className="p-5">
+          <p className="text-sm text-muted">
+            Paste this before the closing <code className="font-mono text-ink">&lt;/body&gt;</code>{" "}
+            tag on your site. A chat button appears in the bottom-right corner.
+          </p>
+          <pre className="mt-4 overflow-x-auto rounded-lg border border-line bg-paper px-3.5 py-3 font-mono text-xs text-ink">
+            {snippet}
+          </pre>
+          <div className="mt-3">
+            <CopySnippet text={snippet} />
+          </div>
+        </Card>
+      </section>
 
       {/* Business profile */}
       <section className="space-y-3">

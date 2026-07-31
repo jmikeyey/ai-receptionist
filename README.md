@@ -1,8 +1,18 @@
 # AI Receptionist
 
-A multi-tenant AI receptionist that businesses embed on their site. It converses with visitors,
-answers from the business's own info, books appointments, and captures leads — with an owner
-dashboard for it all. Runs entirely on free infrastructure.
+A multi-tenant AI receptionist businesses drop onto their site with one script tag. It converses
+with visitors, answers from the business's own info, books appointments, and captures leads — with
+an owner dashboard for it all. Runs entirely on free infrastructure.
+
+```html
+<script src="https://<host>/embed.js" data-business-id="<uuid>" defer></script>
+```
+
+The snippet (`public/embed.js`) injects a launcher button that opens `/c/<businessId>?embed=1` in an
+iframe; the chat only loads on first open. The dashboard's Settings page shows the ready-to-paste tag.
+
+Early project — web chat, booking, leads, dashboard, semantic knowledge base and the embed work end
+to end. Self-serve signup and a phone channel are not built yet.
 
 **Slice 1 (this build):** web-chat receptionist + booking + lead capture + owner dashboard,
 multi-tenant schema with a seeded demo business. Next: FAQ knowledge base (embeddings), then voice.

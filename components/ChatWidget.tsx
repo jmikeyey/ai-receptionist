@@ -10,9 +10,12 @@ const suggestions = ["What are your hours?", "Do you take new patients?", "Book 
 export default function ChatWidget({
   businessId,
   businessName,
+  embedded = false,
 }: {
   businessId: string;
   businessName: string;
+  /** Rendered inside the embed iframe: fill the frame instead of centring a page-width column. */
+  embedded?: boolean;
 }) {
   const [conversationId] = useState(() => crypto.randomUUID());
   const [input, setInput] = useState("");
@@ -40,7 +43,9 @@ export default function ChatWidget({
   }
 
   return (
-    <div className="mx-auto flex h-[100dvh] max-w-2xl flex-col bg-surface">
+    <div
+      className={`flex h-[100dvh] flex-col bg-surface ${embedded ? "w-full" : "mx-auto max-w-2xl"}`}
+    >
       {/* Header */}
       <header className="flex items-center gap-3 border-b border-line px-5 py-3.5">
         <span className="grid h-9 w-9 place-items-center rounded-full bg-accent-tint text-sm font-semibold text-accent-ink">
