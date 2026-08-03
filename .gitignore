@@ -35,6 +35,12 @@ yarn-error.log*
 .env*
 !.env.example
 
+# scratch files — secrets pasted into an unnamed buffer must never reach a commit
+Untitled
+Untitled*
+*.scratch
+scratch/
+
 # vercel
 .vercel
 
