@@ -117,7 +117,12 @@ export default function Home() {
       <footer className="border-t border-line">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-6 text-xs text-faint">
           <Logo withWordmark={false} />
-          <span>Multi-tenant · Next.js · Supabase · Groq</span>
+          <span>
+            Multi-tenant · Next.js · Supabase · Groq ·{" "}
+            <a href="https://johnmicky-butnande.vercel.app/ai-assistant" className="underline underline-offset-4">
+              Built by John Micky
+            </a>
+          </span>
         </div>
       </footer>
     </div>
